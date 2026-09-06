@@ -1,0 +1,14 @@
+2024-01-01 10:00:00 INFO Application starting up
+2024-01-01 10:00:01 INFO Loading configuration from config.properties
+2024-01-01 10:00:02 WARN Configuration key "db.pool" is deprecated
+2024-01-01 10:00:03 INFO Database connection pool initialized with size=10
+2024-01-01 10:00:04 ERROR Failed to connect to database: Connection refused
+2024-01-01 10:00:05 ERROR Retry attempt 1/3 failed for database connection
+2024-01-01 10:00:06 WARN Using fallback database connection
+2024-01-01 10:00:07 INFO Fallback database connected successfully
+2024-01-01 10:00:08 INFO Starting web server on port 8080
+2024-01-01 10:00:09 WARN SSL certificate will expire in 30 days
+2024-01-01 10:00:10 INFO Web server started and listening on http://localhost:8080
+2024-01-01 10:00:11 ERROR User authentication service threw an exception
+2024-01-01 10:00:12 INFO User authentication service restarted
+2024-01-01 10:00:13 INFO All services initialized successfully
