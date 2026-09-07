@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ClaudeCodeTabState">
+    <option name="tabSessions">
+      <map>
+        <entry key="0">
+          <value>
+            <TabSessionState>
+              <option name="provider" value="claude" />
+              <option name="sessionId" value="5b5e7507-2283-4419-9117-dda6b6c8dbbd" />
+              <option name="cwd" value="C:\Users\lenovo\Desktop\软件工程技术实验\homework2.3\homework2.3.1\E-commerce_Promotion_Pricing_and_Global_Configuration_System" />
+              <option name="model" value="claude-sonnet-5[1m]" />
+              <option name="permissionMode" value="bypassPermissions" />
+            </TabSessionState>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
