@@ -1,0 +1,234 @@
+@startuml homework2.1_reviewed
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam maxMessageSize 250
+hide circle
+title 智能办公空间调度与计费系统 — 优化版类图
+
+' ================================================================
+' 枚举与值对象
+' ================================================================
+enum RoomType {
+  BOARDROOM
+  TRAINING
+  STANDARD
+}
+
+enum EquipmentStatus {
+  AVAILABLE
+  MAINTENANCE
+  SCRAPPED
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum InvoiceStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
+
+' 值对象：周期预订规则 —— 提炼自裸 String，便于复用与验证
+' <<Value Object>> 不可变，无标识
+class RecurrenceRule {
+  - frequency: RuleFrequency  ' WEEKLY / MONTHLY
+  - interval: int              ' 例如 1
+  - dayOfWeek: int             ' 例如 MONDAY
+  - startDate: LocalDate
+  - endDate: LocalDate         ' 或 occurrenceCount: int
+  + nextOccurrence(from: LocalDate): LocalDate
+}
+note right of RecurrenceRule
+  <<Value Object>>
+  周期性规则封装为值对象，而非裸字符串，
+  支持校验（如 endDate > startDate）并具备生成
+  下一次会议日期的行为。
+end note
+
+' ================================================================
+' 1. 账号与角色
+' ================================================================
+abstract class User {
+  - id: String
+  - name: String
+  - phone: String
+  - registrationTime: DateTime
+}
+
+class Department {
+  - deptId: String
+  - deptName: String
+  - budget: Double
+  + deductBudget(amount: Double): boolean
+}
+
+class Employee {
+}
+
+class ExternalClient {
+  - companyName: String
+  - socialCreditCode: String
+  - balance: Double
+  + recharge(amount: Double): void
+  + deductBalance(amount: Double): boolean
+}
+
+User <|-- Employee
+User <|-- ExternalClient
+Employee "0..*" --> "1" Department : belongs to
+
+' ================================================================
+' 2. 空间与资产
+' ================================================================
+class Building {
+  - buildingId: String
+  - name: String
+}
+
+class Floor {
+  - floorId: String
+  - level: int
+}
+
+class Room {
+  - roomId: String
+  - name: String
+  - type: RoomType
+  - baseHourlyRate: Double
+  - maxCapacity: int
+}
+
+class Equipment {
+  - assetId: String
+  - name: String
+  - type: String
+  - status: EquipmentStatus
+  - hourlyRentalRate: Double
+  + assignTo(room: Room): void
+  + release(): void
+}
+
+' 大楼被拆除，楼层与会议室随之消亡 —— 组合
+Building "1" *-- "1..*" Floor : contains >
+Floor "1" *-- "1..*" Room : contains >
+
+' 设备可动态搬离、再分配 —— 弱生命周期，用关联
+' 一处会议室装修期间设备释放后可分配给其他会议室（聚合语义）
+Room "0..1" o-- "0..*" Equipment : currently holds >
+
+' ================================================================
+' 3. 核心预订流程
+' ================================================================
+class ReservationGroup {
+  - groupId: String
+  + cancelAll(): void
+  + cancelSpecificOccurrence(reservationId: String): void
+}
+
+class Reservation {
+  - reservationId: String
+  - startTime: DateTime
+  - endTime: DateTime
+  - meetingSubject: String
+  - status: ReservationStatus
+  + cancel(): void
+  + start(): void
+  + complete(): void
+}
+
+class ReservationService {
+  + createReservation(user: User, room: Room, start: DateTime, end: DateTime, subject: String): Reservation
+  + createRecurringReservations(user: User, room: Room, rule: RecurrenceRule, subject: String): ReservationGroup
+  + checkConflict(room: Room, start: DateTime, end: DateTime): boolean
+}
+
+' 周期性任务整体管理，子预订随组消亡 —— 组合
+ReservationGroup "0..1" *-- "1..*" Reservation : groups >
+User "1" --> "0..*" Reservation : initiates
+Reservation "0..*" --> "1" Room : books
+
+' 一个预订实际占用的设备 ∈ 该次预订快照，而非会议室当前持有全部设备
+Reservation "1" --> "0..*" Equipment : uses at booking time >
+
+ReservationService ..> Reservation : creates
+ReservationService ..> ReservationGroup : creates
+ReservationService ..> RecurrenceRule : validates
+
+' ================================================================
+' 4. 动态计费与违约（策略模式）
+' ================================================================
+interface BillingStrategy {
+  + calculateFee(room: Room, equipments: List<Equipment>, duration: Double): Double
+}
+
+class InternalBillingStrategy {
+}
+
+class ExternalBillingStrategy {
+  - premiumFactor: Double = 1.2
+}
+
+class BillingService {
+  + settle(reservation: Reservation): Invoice
+}
+
+class Invoice {
+  - invoiceId: String
+  - totalFee: Double
+  - penaltyAmount: Double
+  - finalAmount: Double
+  - status: InvoiceStatus
+}
+
+' 违约规则同样是易变规则 —— 独立抽象，符合开闭原则
+interface PenaltyRule {
+  + calculatePenalty(reservation: Reservation, cancelTime: DateTime, totalFee: Double): Double
+}
+
+class StandardPenaltyRule {
+  - rate: Double = 0.30
+  - freeCancelHours: Integer = 24
+}
+
+' 违约金记录：违约事实的历史快照（金额、原因均已固化）
+class Penalty {
+  - penaltyId: String
+  - penaltyAmount: Double
+  - reason: String
+  + apply(): void
+}
+
+note bottom of Penalty
+  Penalty 是违约事实记录（Entity）,金额在
+  违约发生那一刻固化保存，防止日后规则
+  调整导致历史账单回溯变化。规则计算本身
+  抽象为 PenaltyRule 策略，符合开闭原则。
+end note
+
+BillingStrategy <|.. InternalBillingStrategy
+BillingStrategy <|.. ExternalBillingStrategy
+PenaltyRule <|.. StandardPenaltyRule
+
+' 通过角色定位计费策略，避免硬编码 if-else（依赖倒置）
+' 新增 VIP 客户时只需新增策略实现，核心代码零改动
+User "1" --> "1" BillingStrategy : resolved via role >
+
+BillingService --> BillingStrategy : uses
+BillingService --> PenaltyRule : applies
+BillingService ..> Reservation : settles
+Reservation "1" --> "0..1" Invoice : receives
+Reservation "1" --> "0..1" Penalty : incurs
+
+note bottom of ExternalBillingStrategy
+  Penalty 违约金记录保留历史快照；
+  违约金费率、免罚窗口(24h)通过
+  StandardPenaltyRule 可配置。
+end note
+
+footer 优化版：引入 RecurrenceRule 值对象 / 角色定位计费策略 / 违约规则独立抽象
+@enduml

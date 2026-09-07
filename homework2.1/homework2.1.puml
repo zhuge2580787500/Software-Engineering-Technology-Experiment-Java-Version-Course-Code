@@ -1,0 +1,156 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+' ========== 枚举 ==========
+enum RoomType {
+  BOARDROOM
+  TRAINING
+  STANDARD
+}
+
+enum EquipmentStatus {
+  AVAILABLE
+  MAINTENANCE
+  SCRAPPED
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+' ========== 1. 账号与角色 ==========
+abstract class User {
+  - id: String
+  - name: String
+  - phone: String
+  - registrationTime: DateTime
+}
+
+class Department {
+  - deptId: String
+  - deptName: String
+  - budget: Double
+  + deductBudget(amount: Double): boolean
+}
+
+class Employee {
+}
+
+class ExternalClient {
+  - companyName: String
+  - socialCreditCode: String
+  - balance: Double
+  + recharge(amount: Double): void
+  + deductBalance(amount: Double): boolean
+}
+
+User <|-- Employee
+User <|-- ExternalClient
+Employee "0..*" --> "1" Department : belongs to
+
+' ========== 2. 空间与资产 ==========
+class Building {
+  - buildingId: String
+  - name: String
+}
+
+class Floor {
+  - floorId: String
+  - level: int
+}
+
+class Room {
+  - roomId: String
+  - name: String
+  - type: RoomType
+  - baseHourlyRate: Double
+  - maxCapacity: int
+  + isAvailable(start: DateTime, end: DateTime): boolean
+}
+
+class Equipment {
+  - assetId: String
+  - name: String
+  - type: String
+  - status: EquipmentStatus
+  - hourlyRentalRate: Double
+}
+
+Building "1" *-- "1..*" Floor : contains
+Floor "1" *-- "1..*" Room : contains
+Room "0..1" -- "0..*" Equipment : currently assigned
+
+' ========== 3. 预订流程 ==========
+class ReservationGroup {
+  - groupId: String
+  - recurrenceRule: String
+  + cancelAll(): void
+  + cancelSpecificOccurrence(reservationId: String): void
+}
+
+class Reservation {
+  - reservationId: String
+  - startTime: DateTime
+  - endTime: DateTime
+  - meetingSubject: String
+  - status: ReservationStatus
+  + cancel(): void
+}
+
+class ReservationService {
+  + createReservation(user: User, room: Room, start: DateTime, end: DateTime, subject: String): Reservation
+  + createRecurringReservations(user: User, room: Room, rule: String, subject: String): ReservationGroup
+  + checkConflict(room: Room, start: DateTime, end: DateTime): boolean
+}
+
+ReservationGroup "0..1" *-- "1..*" Reservation : groups
+User "1" --> "0..*" Reservation : initiates
+Reservation "0..*" --> "1" Room : books
+ReservationService ..> Reservation : creates
+ReservationService ..> ReservationGroup : creates
+ReservationService ..> Room : checks
+
+' ========== 4. 动态计费与违约 ==========
+interface BillingStrategy {
+  + calculateFee(room: Room, equipments: List<Equipment>, duration: Double): Double
+}
+
+class InternalBillingStrategy {
+  + calculateFee(...): Double
+}
+
+class ExternalBillingStrategy {
+  + calculateFee(...): Double
+}
+
+class BillingService {
+  + settle(reservation: Reservation): Invoice
+}
+
+class Invoice {
+  - invoiceId: String
+  - totalFee: Double
+  - penaltyAmount: Double
+  - finalAmount: Double
+  - status: String
+}
+
+class Penalty {
+  - penaltyId: String
+  - penaltyAmount: Double
+  - reason: String
+  + calculatePenalty(totalFee: Double, cancelTime: DateTime, startTime: DateTime): Double
+}
+
+BillingStrategy <|.. InternalBillingStrategy
+BillingStrategy <|.. ExternalBillingStrategy
+
+BillingService --> BillingStrategy : uses
+BillingService ..> Reservation : settles
+Reservation "1" --> "0..1" Invoice : receives
+Reservation "1" --> "0..1" Penalty : incurs
+
+@enduml
