@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ClaudeCodeTabState">
+    <option name="tabSessions">
+      <map>
+        <entry key="0">
+          <value>
+            <TabSessionState>
+              <option name="provider" value="claude" />
+              <option name="sessionId" value="d649cf29-669b-4c32-a41d-eba75d606d64" />
+              <option name="cwd" value="C:\Users\lenovo\Desktop\软件工程技术实验\homework2.3\homework2.3.2\Smart_Home_Control_Hub_and_Status_Monitoring_Dashboard" />
+              <option name="model" value="claude-sonnet-5[1m]" />
+              <option name="permissionMode" value="bypassPermissions" />
+            </TabSessionState>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
