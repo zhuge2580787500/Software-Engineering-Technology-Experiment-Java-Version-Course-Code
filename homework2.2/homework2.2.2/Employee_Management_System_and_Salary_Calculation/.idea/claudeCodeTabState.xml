@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ClaudeCodeTabState">
+    <option name="tabSessions">
+      <map>
+        <entry key="0">
+          <value>
+            <TabSessionState>
+              <option name="provider" value="claude" />
+              <option name="sessionId" value="3a07207e-926b-486e-9882-c7bd7c6275d5" />
+              <option name="cwd" value="C:\Users\lenovo\Desktop\软件工程技术实验\homework2.2\homework2.2.2\Employee_Management_System_and_Salary_Calculation" />
+              <option name="model" value="claude-sonnet-5[1m]" />
+              <option name="permissionMode" value="acceptEdits" />
+            </TabSessionState>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
