@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ClaudeCodeTabState">
+    <option name="tabSessions">
+      <map>
+        <entry key="0">
+          <value>
+            <TabSessionState>
+              <option name="provider" value="claude" />
+              <option name="sessionId" value="b2438261-d9e4-4a0e-b186-a34676a7f059" />
+              <option name="cwd" value="C:\Users\lenovo\Desktop\软件工程技术实验\exam1\exam1" />
+              <option name="model" value="claude-sonnet-5[1m]" />
+              <option name="permissionMode" value="acceptEdits" />
+            </TabSessionState>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
